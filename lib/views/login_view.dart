@@ -9,6 +9,7 @@ import 'package:lottie/lottie.dart';
 import 'package:user_side/views/home_page.dart';
 import 'package:user_side/views/widgets/buttons.dart';
 import 'package:user_side/views/widgets/c_texts.dart';
+import 'package:user_side/views/widgets/constants.dart';
 
 import '../constants.dart';
 import '../controller/simple_ui_controller.dart';
@@ -63,7 +64,7 @@ class _LoginViewState extends State<LoginView> {
           ),
         );
       } else {
-        await storage.write('user_name', nameController.text.trim());
+        await storage.write(Texts.USERNAME, nameController.text.trim());
         Navigator.pushReplacement(
             context,
             MaterialPageRoute(
