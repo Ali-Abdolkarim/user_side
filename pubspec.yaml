@@ -41,6 +41,10 @@ dependencies:
   firebase_core: ^2.4.0
   cloud_firestore: ^4.2.0
   get_storage: ^2.0.3
+  equatable: 
+  json_serializable: 
+  percent_indicator:
+  flutter_svg: 
 
 dev_dependencies:
   flutter_test:
