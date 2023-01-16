@@ -12,5 +12,6 @@ class Texts {
   static const String DURATION = 'duration';
   static const String EXAMS_TAKEN = 'exams_taken';
   static const String EXAM_ID = 'exam_id';
+  static const String QUESTION_ID = 'question_id';
   static const String USERNAME = 'username';
 }

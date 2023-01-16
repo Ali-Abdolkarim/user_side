@@ -7,7 +7,7 @@ class ReadSVG {
       child: asset.isEmpty
           ? const Center()
           : SvgPicture.asset(
-              'assets/images/$asset.svg',
+              'assets/$asset.svg',
               color: color ?? Colors.white,
               height: size ?? 20,
               width: size ?? 20,

@@ -45,7 +45,8 @@ dependencies:
   json_serializable: 
   percent_indicator:
   flutter_svg: 
-
+  build_runner:
+  circular_countdown_timer:
 dev_dependencies:
   flutter_test:
     sdk: flutter

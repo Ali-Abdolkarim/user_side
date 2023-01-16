@@ -1,5 +1,6 @@
 import 'dart:developer';
 
+import 'package:circular_countdown_timer/circular_countdown_timer.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 import 'package:percent_indicator/linear_percent_indicator.dart';
@@ -13,7 +14,7 @@ class QuizInfoCard extends StatelessWidget {
   final List<QuizInfoItem>? items;
   final Color accentColor;
   final String icon;
-  final int? timeRemaining;
+  final int timeRemaining;
   final String? againText;
   final int totalQuestions;
   final int questionsAnswered;
@@ -23,7 +24,7 @@ class QuizInfoCard extends StatelessWidget {
     this.items,
     required this.accentColor,
     required this.icon,
-    this.timeRemaining,
+    required this.timeRemaining,
     this.againText,
     this.title,
     required this.questionsAnswered,
@@ -69,13 +70,53 @@ class QuizInfoCard extends StatelessWidget {
                   child: Column(
                     children: [
                       // ReadSVG.read(icon, color: Colors.deepOrange, size: 30),
-                      CText(
-                        againText ??
-                            '${timeRemaining! ~/ 3600}:${(timeRemaining! ~/ 60) % 60}:${timeRemaining! % 60}',
-                        padding: const EdgeInsets.only(top: 4),
-                        sizee: 14,
-                        color: Colors.white,
-                      )
+                      // CText(
+                      //   againText ??
+                      //       '${timeRemaining! ~/ 3600}:${(timeRemaining! ~/ 60) % 60}:${timeRemaining! % 60}',
+                      //   padding: const EdgeInsets.only(top: 4),
+                      //   sizee: 14,
+                      //   color: Colors.white,
+                      // )
+                      CircularCountDownTimer(
+                        duration: timeRemaining,
+                        controller: CountDownController(),
+                        width: 60,
+                        height: 60,
+                        ringColor: Colors.grey[300]!,
+                        ringGradient: null,
+                        fillColor: Colors.purpleAccent[100]!,
+                        fillGradient: null,
+                        backgroundColor: Colors.purple[500],
+                        backgroundGradient: null,
+                        strokeWidth: 8.0,
+                        strokeCap: StrokeCap.round,
+                        textStyle: TextStyle(
+                            fontSize: 10.0,
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold),
+                        textFormat: CountdownTextFormat.HH_MM_SS,
+                        isReverse: true,
+                        isReverseAnimation: false,
+                        isTimerTextShown: true,
+                        autoStart: true,
+                        onStart: () {
+                          debugPrint('Countdown Started');
+                        },
+                        onComplete: () {
+                          debugPrint('Countdown Ended');
+                        },
+                        onChange: (String timeStamp) {
+                          debugPrint('Countdown Changed $timeStamp');
+                        },
+                        timeFormatterFunction:
+                            (defaultFormatterFunction, duration) {
+                          DateTime time = DateTime.fromMillisecondsSinceEpoch(
+                              duration.inMilliseconds);
+                          // return '${time.hour}:${time.minute}:${time.second}';
+                          return Function.apply(
+                              defaultFormatterFunction, [duration]);
+                        },
+                      ),
                     ],
                   ),
                 )
@@ -200,23 +241,17 @@ class QuestionCard extends StatefulWidget {
 }
 
 class _QuestionCardState extends State<QuestionCard> {
-  AnswerId? selectedItem;
+  String? selectedItem;
   var answers = [];
   @override
   Widget build(BuildContext context) {
     var size = MediaQuery.of(context).size;
     // log(widget.showAnswer.toString());
     // log(widget.showAnswer.toString());
-    answers = widget.question.answers!
-        .map((e) => AnswerId(
-              answer: e.answer.toString(),
-              id: e.id.toString(),
-            ))
-        .toList()
-        .map((e) {
+    answers = widget.question.answerItemModel!.answers.map((e) {
       return AnswerItemCard(
-        answer: e.answer,
-        answerType: widget.question.answersType ?? 0,
+        answer: e,
+        // answerType: widget.question.answersType ?? 0,
         action: widget.showAnswer
             ? () {}
             : () {
@@ -226,24 +261,24 @@ class _QuestionCardState extends State<QuestionCard> {
                 //changed this one -------------------------------------------------------->
                 widget.updateAnswerAction!(
                     widget.questionIndex,
-                    (selectedItem!.id ==
-                            widget.question.schoolExamCorrectAnswerId
-                                .toString())
+                    widget.question.correctAnswer!
+                        .contains(widget.question.answerItemModel!.answers
+                            .indexOf(selectedItem!))
                         .toString());
                 log(selectedItem.toString());
               },
         isSelected: selectedItem == e,
         isCorrect: widget.showAnswer &&
-            e.id == widget.question.schoolExamCorrectAnswerId.toString(),
+            widget.question.correctAnswer!.contains(widget
+                .question.answerItemModel!.answers
+                .indexOf(selectedItem!)),
         // &&
         // selectedItem!.answer == e.answer,
         accentColor: widget.accentColor,
         showAnswer: widget.showAnswer,
       );
     }).toList();
-    // for (var e in answers) {
-    //   print(e.printItem());
-    // }
+
     return Directionality(
       textDirection: widget.textDirection ?? TextDirection.ltr,
       child: Container(
@@ -254,9 +289,9 @@ class _QuestionCardState extends State<QuestionCard> {
               color: widget.showAnswer
                   ? selectedItem == null
                       ? Colors.grey
-                      : selectedItem!.id ==
-                              widget.question.schoolExamCorrectAnswerId
-                                  .toString()
+                      : widget.question.correctAnswer!.contains(widget
+                              .question.answerItemModel!.answers
+                              .indexOf(selectedItem!))
                           ? Colors.green
                           : Colors.red
                   : widget.accentColor),
@@ -274,9 +309,9 @@ class _QuestionCardState extends State<QuestionCard> {
                 color: widget.showAnswer
                     ? selectedItem == null
                         ? Colors.grey
-                        : selectedItem!.id ==
-                                widget.question.schoolExamCorrectAnswerId
-                                    .toString()
+                        : widget.question.correctAnswer!.contains(widget
+                                .question.answerItemModel!.answers
+                                .indexOf(selectedItem!))
                             ? Colors.green
                             : Colors.red
                     : widget.accentColor,
@@ -301,18 +336,19 @@ class _QuestionCardState extends State<QuestionCard> {
                 // : Html(
                 //     data: widget.question.question ?? '',
                 //   ),
-                widget.showAnswer && (widget.question.result) != null
-                    ? InkWell(
-                        onTap: widget.resultAction,
-                        child: const Padding(
-                          padding: EdgeInsetsDirectional.fromSTEB(8, 0, 4, 0),
-                          child: Icon(
-                            Icons.fullscreen,
-                            color: Colors.white,
-                          ),
-                        ),
-                      )
-                    : const Center(),
+                // widget.showAnswer && (widget.question.result) != null
+                //     ? InkWell(
+                //         onTap: widget.resultAction,
+                //         child: const Padding(
+                //           padding: EdgeInsetsDirectional.fromSTEB(8, 0, 4, 0),
+                //           child: Icon(
+                //             Icons.fullscreen,
+                //             color: Colors.white,
+                //           ),
+                //         ),
+                //       )
+                //     :
+                const Center(),
               ),
             ),
             ...answers,
@@ -323,15 +359,15 @@ class _QuestionCardState extends State<QuestionCard> {
   }
 }
 
-class AnswerId extends Equatable {
-  final String answer;
-  final String id;
-  const AnswerId({required this.answer, required this.id});
+// class AnswerId extends Equatable {
+//   final String answer;
+//   final String id;
+//   const AnswerId({required this.answer, required this.id});
 
-  @override
-  // TODO: implement props
-  List<Object?> get props => [answer, id];
-}
+//   @override
+//   // TODO: implement props
+//   List<Object?> get props => [answer, id];
+// }
 
 class AnswerItemCard extends StatelessWidget {
   final String answer;
@@ -343,7 +379,7 @@ class AnswerItemCard extends StatelessWidget {
   final ActionP action;
   final Color? accentColor;
   final bool showAnswer;
-  final int answerType;
+  // final int answerType;
   const AnswerItemCard({
     Key? key,
     required this.answer,
@@ -355,7 +391,7 @@ class AnswerItemCard extends StatelessWidget {
     this.accentColor,
     required this.isCorrect,
     required this.showAnswer,
-    required this.answerType,
+    // required this.answerType,
   }) : super(key: key);
   void printItem() {
     print('name $answer');

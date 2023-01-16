@@ -1,30 +1,27 @@
 import 'dart:async';
-import 'dart:io';
+import 'dart:developer';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:user_side/models/exam_info.dart';
 import 'package:user_side/models/exam_question.dart';
-import 'package:user_side/models/exam_request.dart';
 import 'package:user_side/views/widgets/buttons.dart';
 import 'package:user_side/views/widgets/c_texts.dart';
+import 'package:user_side/views/widgets/constants.dart';
 import 'package:user_side/views/widgets/question.dart';
 
 class ExamPage extends StatefulWidget {
   final Color accentColor;
-  final List<ExamRequest> examRequests;
-  final String level;
   final String subject;
-  final String section;
-  final int quantity;
+
+  final String examId;
 
   const ExamPage({
     Key? key,
-    required this.examRequests,
     required this.accentColor,
-    required this.level,
-    required this.section,
     required this.subject,
-    required this.quantity,
+    required this.examId,
   }) : super(key: key);
 
   @override
@@ -33,21 +30,22 @@ class ExamPage extends StatefulWidget {
 
 class _ExamPageState extends State<ExamPage> {
   var isAnswer = false;
-  var _timeRemaining = 3600;
+  var _timeRemaining = 20;
   late Timer timer;
   var questionsAnswered = 0;
   var correctAnswers = 0;
   var wrongAnswers = 0;
   var answers = [];
   var _loading = true;
-  List<ExamQuestion>? questions = [];
+  List<ExamQuestion> questions = [];
   bool isRecording = false;
   // late int _selectedLangId;
-  late TextDirection direction;
+  // late TextDirection direction;
 
+  late ExamInfo _examInfo;
+  FirebaseFirestore db = FirebaseFirestore.instance;
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
     _loadData();
   }
@@ -55,40 +53,70 @@ class _ExamPageState extends State<ExamPage> {
   void _loadData() async {
     questions = [];
 
-    // await Provider.of<SchoolProvider>(context, listen: false).loadQuestions(
-    //     context: context,
-    //     examRequests: widget.examRequests,
-    //     quantity: widget.quantity);
-    direction =
-        // GenerallyNeeded.isRTL(questions![0].question!)
-        //     ? TextDirection.rtl
-        //     :
-        TextDirection.ltr;
-    // _selectedLangId = (await SharedPref.load(StorageKeys.selectedLanguage)) - 1;
-    // log(_selectedLangId.toString());
+    setState(() {
+      _loading = true;
+    });
+    QuerySnapshot? questionsSnapshot;
+    db
+        .collection(Texts.EXAMS)
+        .doc(widget.examId)
+        .snapshots()
+        .listen((event) async {
+      if (event.data() != null) {
+        _examInfo = ExamInfo.fromJson(event.data()!);
+        QuerySnapshot questionsResponse = await db
+            .collection(Texts.QUESTIONS)
+            .where(Texts.EXAM_ID, isEqualTo: widget.examId)
+            .get();
+        questions.clear();
+        for (var element in questionsResponse.docs) {
+          questions.add(
+              ExamQuestion.fromJson((element.data()!) as Map<String, dynamic>));
+          log('-->>' + questions[questions.length - 1].examId.toString());
+          questionsSnapshot = await db
+              .collection(Texts.ANSWERS)
+              .where(Texts.QUESTION_ID, isEqualTo: element.id)
+              .get();
+
+          for (var element in questionsSnapshot!.docs) {
+            questions[questions.length - 1].answerItemModel =
+                AnswerItemModel.fromJson(
+                    (element.data() as Map<String, dynamic>?)!);
+            log('-->>' +
+                questions[questions.length - 1]
+                    .answerItemModel!
+                    .toJson()
+                    .toString());
+          }
+        }
+        if (questions.isNotEmpty) {
+          answers = List.generate(questions.length, (_) => null);
+          _timeRemaining = ((_examInfo.date +
+                      _examInfo.duration * 60 * 1000 -
+                      DateTime.now().millisecondsSinceEpoch) /
+                  1000)
+              .floor();
+          // log(_timeRemaining.toString());
+          // timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+          //   if (mounted) {
+          //     setState(() {
+          //       _timeRemaining--;
+          //     });
+          //   }
+          //   if (_timeRemaining == 0) {
+          //     calculateResult(context);
+
+          //     timer.cancel();
+          //   }
+          // });
+        }
+        setState(() {});
+      }
+    });
+
     setState(() {
       _loading = false;
     });
-    if (questions != null) {
-      answers = List.generate(questions!.length, (_) => null);
-      _timeRemaining = questions!.length * 120;
-      timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-        setState(() {
-          _timeRemaining--;
-        });
-        if (_timeRemaining == 0) {
-          calculateResult(context);
-
-          timer.cancel();
-        }
-      });
-    }
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
-    timer.cancel();
   }
 
   //changed this one -------------------------------------------------------->
@@ -101,24 +129,31 @@ class _ExamPageState extends State<ExamPage> {
 
   void showBackDialog() {
     Get.defaultDialog(
-      title: 'ئایا دڵنیایت لە کۆتایی هێنان بە تاقیکردنەوە؟',
+      title: 'Do you really want to exit the Exam?',
       titleStyle: const TextStyle(fontSize: 16),
-      content: Column(
-        children: [
-          SimpleButton(
-            'دەرچوون',
-            action: () {
-              Navigator.of(context).pop();
-              Navigator.of(context).pop();
-            },
-          ),
-          SimpleButton(
-            'پاشگەزبوونەوە',
-            action: () {
-              Navigator.of(context).pop();
-            },
-          ),
-        ],
+      radius: 6,
+      content: Container(
+        margin: const EdgeInsetsDirectional.fromSTEB(0, 18, 0, 0),
+        child: Column(
+          children: [
+            SimpleButton(
+              'Exit',
+              action: () {
+                Navigator.of(context).pop();
+                Navigator.of(context).pop();
+              },
+            ),
+            Container(
+              margin: const EdgeInsetsDirectional.fromSTEB(0, 8, 0, 0),
+              child: SimpleButton(
+                'Cancel',
+                action: () {
+                  Navigator.of(context).pop();
+                },
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -150,19 +185,20 @@ class _ExamPageState extends State<ExamPage> {
                       child: CircularProgressIndicator(),
                     )
                   : Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Padding(
-                          padding: EdgeInsetsDirectional.fromSTEB(
-                              Platform.isIOS ? 40 : 34, 28, 8, 8),
+                          padding: const EdgeInsetsDirectional.fromSTEB(
+                              34, 28, 8, 8),
                           child: BackButton(
                             onPressed: () {
-                              questions!.isEmpty
+                              questions.isEmpty
                                   ? Navigator.pop(context)
                                   : showBackDialog();
                             },
                           ),
                         ),
-                        questions!.isEmpty
+                        questions.isEmpty
                             ? const Center(
                                 child: CText(
                                   'هیچ پرسیارێک بەردەست نیە.',
@@ -179,6 +215,7 @@ class _ExamPageState extends State<ExamPage> {
                                               accentColor: widget.accentColor,
                                               icon: 'history',
                                               againText: 'دووبارەکردنەوە',
+                                              timeRemaining: _timeRemaining,
                                               questionsAnswered: answers
                                                   .where((element) =>
                                                       element != null)
@@ -196,7 +233,7 @@ class _ExamPageState extends State<ExamPage> {
                                                   showLine: false,
                                                 ),
                                               ],
-                                              totalQuestions: questions!.length)
+                                              totalQuestions: questions.length)
                                           : QuizInfoCard(
                                               accentColor: widget.accentColor,
                                               icon: 'clock',
@@ -204,13 +241,13 @@ class _ExamPageState extends State<ExamPage> {
                                                   .where((element) =>
                                                       element != null)
                                                   .length,
-                                              totalQuestions: questions!.length,
+                                              totalQuestions: questions.length,
                                               timeRemaining: _timeRemaining,
                                               items: [
-                                                QuizInfoItem(
-                                                    'ئاستێک', widget.level),
-                                                QuizInfoItem(
-                                                    'یەکە', widget.section),
+                                                // QuizInfoItem(
+                                                //     'ئاستێک', widget.level),
+                                                // QuizInfoItem(
+                                                //     'یەکە', widget.section),
                                                 QuizInfoItem(
                                                     'بابەت', widget.subject),
                                               ],
@@ -224,15 +261,15 @@ class _ExamPageState extends State<ExamPage> {
                                               crossAxisAlignment:
                                                   CrossAxisAlignment.center,
                                               children: [
-                                                ...questions!
+                                                ...questions
                                                     .map(
                                                       (e) => QuestionCard(
                                                         question: e,
                                                         accentColor:
                                                             widget.accentColor,
                                                         showAnswer: isAnswer,
-                                                        textDirection:
-                                                            direction,
+                                                        // textDirection:
+                                                        //     direction,
                                                         padding:
                                                             const EdgeInsetsDirectional
                                                                     .fromSTEB(
@@ -241,41 +278,40 @@ class _ExamPageState extends State<ExamPage> {
                                                             (p0, p1) {
                                                           updateAnswer(p0, p1);
                                                         },
-                                                        questionIndex:
-                                                            questions!
-                                                                .indexOf(e),
+                                                        questionIndex: questions
+                                                            .indexOf(e),
                                                         resultAction: () {
-                                                          if (e.result !=
+                                                          if (e.correctAnswer !=
                                                                   null ||
-                                                              e.result !=
+                                                              e.correctAnswer !=
                                                                       null &&
-                                                                  (e.result!
+                                                                  (e.correctAnswer!
                                                                       .isNotEmpty)) {
-                                                            Get.defaultDialog(
-                                                              content: CText(
-                                                                align: TextAlign
-                                                                    .start,
-                                                                e.result ?? '',
-                                                                sizee: 14,
-                                                              ),
-                                                              // items: [
-                                                              // e.questionType ==
-                                                              //         0
-                                                              // ?
-                                                              // CText(
-                                                              //   align:
-                                                              //       TextAlign
-                                                              //           .start,
-                                                              //   e.result ??
-                                                              //       '',
-                                                              //   sizee: 14,
-                                                              // ),
-                                                              // : Html(
-                                                              //     data: e.result ??
-                                                              //         '',
-                                                              //   )
-                                                              // ],
-                                                            );
+                                                            // Get.defaultDialog(
+                                                            //   content: CText(
+                                                            //     align: TextAlign
+                                                            //         .start,
+                                                            //     e.result ?? '',
+                                                            //     sizee: 14,
+                                                            //   ),
+                                                            // items: [
+                                                            // e.questionType ==
+                                                            //         0
+                                                            // ?
+                                                            // CText(
+                                                            //   align:
+                                                            //       TextAlign
+                                                            //           .start,
+                                                            //   e.result ??
+                                                            //       '',
+                                                            //   sizee: 14,
+                                                            // ),
+                                                            // : Html(
+                                                            //     data: e.result ??
+                                                            //         '',
+                                                            //   )
+                                                            // ],
+                                                            // );
                                                           }
                                                         },
                                                       ),
@@ -316,7 +352,7 @@ class _ExamPageState extends State<ExamPage> {
       if (item == null) {
         continue;
       }
-      if (item) {
+      if (item == 'true') {
         correctAnswers++;
       } else {
         wrongAnswers++;
