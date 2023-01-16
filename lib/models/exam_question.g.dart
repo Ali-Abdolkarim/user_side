@@ -13,11 +13,14 @@ ExamQuestion _$ExamQuestionFromJson(Map<String, dynamic> json) => ExamQuestion(
           : AnswerItemModel.fromJson(
               json['answerItemModel'] as Map<String, dynamic>),
       correctAnswer: (json['correct_answer'] as List<dynamic>?)
-          ?.map((e) => e as int)
+          ?.map((e) => e as bool)
           .toList(),
       examId: json['exam_id'] as String?,
       extraPoint: json['extra_point'] as String?,
       answersLink: json['answers_link'] as String?,
+      selectedAnswers: (json['selectedAnswers'] as List<dynamic>?)
+          ?.map((e) => e as bool)
+          .toList(),
     );
 
 Map<String, dynamic> _$ExamQuestionToJson(ExamQuestion instance) =>
@@ -28,6 +31,7 @@ Map<String, dynamic> _$ExamQuestionToJson(ExamQuestion instance) =>
       'exam_id': instance.examId,
       'question': instance.question,
       'answerItemModel': instance.answerItemModel,
+      'selectedAnswers': instance.selectedAnswers,
     };
 
 AnswerItemModel _$AnswerItemModelFromJson(Map<String, dynamic> json) =>

@@ -35,7 +35,7 @@ class _ExamPageState extends State<ExamPage> {
   var questionsAnswered = 0;
   var correctAnswers = 0;
   var wrongAnswers = 0;
-  var answers = [];
+  var answers = {};
   var _loading = true;
   List<ExamQuestion> questions = [];
   bool isRecording = false;
@@ -56,7 +56,7 @@ class _ExamPageState extends State<ExamPage> {
     setState(() {
       _loading = true;
     });
-    QuerySnapshot? questionsSnapshot;
+    QuerySnapshot? answersSnapshot;
     db
         .collection(Texts.EXAMS)
         .doc(widget.examId)
@@ -68,29 +68,34 @@ class _ExamPageState extends State<ExamPage> {
             .collection(Texts.QUESTIONS)
             .where(Texts.EXAM_ID, isEqualTo: widget.examId)
             .get();
+
         questions.clear();
         for (var element in questionsResponse.docs) {
           questions.add(
               ExamQuestion.fromJson((element.data()!) as Map<String, dynamic>));
-          log('-->>' + questions[questions.length - 1].examId.toString());
-          questionsSnapshot = await db
+
+          answersSnapshot = await db
               .collection(Texts.ANSWERS)
               .where(Texts.QUESTION_ID, isEqualTo: element.id)
               .get();
 
-          for (var element in questionsSnapshot!.docs) {
-            questions[questions.length - 1].answerItemModel =
-                AnswerItemModel.fromJson(
-                    (element.data() as Map<String, dynamic>?)!);
-            log('-->>' +
-                questions[questions.length - 1]
-                    .answerItemModel!
-                    .toJson()
-                    .toString());
+          questions[questions.length - 1].answerItemModel =
+              AnswerItemModel.fromJson(
+                  (answersSnapshot!.docs[0].data() as Map<String, dynamic>?)!);
+          questions[questions.length - 1].selectedAnswers = [];
+          for (var i = 0;
+              i <
+                  questions[questions.length - 1]
+                      .answerItemModel!
+                      .answers
+                      .length;
+              i++) {
+            questions[questions.length - 1].selectedAnswers!.add(false);
           }
         }
+
         if (questions.isNotEmpty) {
-          answers = List.generate(questions.length, (_) => null);
+          // answers = List.generate(questions.length, (_) => null);
           _timeRemaining = ((_examInfo.date +
                       _examInfo.duration * 60 * 1000 -
                       DateTime.now().millisecondsSinceEpoch) /
@@ -216,7 +221,7 @@ class _ExamPageState extends State<ExamPage> {
                                               icon: 'history',
                                               againText: 'دووبارەکردنەوە',
                                               timeRemaining: _timeRemaining,
-                                              questionsAnswered: answers
+                                              questionsAnswered: answers.values
                                                   .where((element) =>
                                                       element != null)
                                                   .length,
@@ -237,7 +242,7 @@ class _ExamPageState extends State<ExamPage> {
                                           : QuizInfoCard(
                                               accentColor: widget.accentColor,
                                               icon: 'clock',
-                                              questionsAnswered: answers
+                                              questionsAnswered: answers.values
                                                   .where((element) =>
                                                       element != null)
                                                   .length,
@@ -275,8 +280,17 @@ class _ExamPageState extends State<ExamPage> {
                                                                     .fromSTEB(
                                                                 0, 10, 0, 0),
                                                         updateAnswerAction:
-                                                            (p0, p1) {
-                                                          updateAnswer(p0, p1);
+                                                            (index) {
+                                                          // updateAnswer(p0, p1);
+                                                          log(e.selectedAnswers
+                                                              .toString());
+                                                          e.selectedAnswers![
+                                                                  index!] =
+                                                              !e.selectedAnswers![
+                                                                  index];
+                                                          setState(() {});
+                                                          log(e.selectedAnswers
+                                                              .toString());
                                                         },
                                                         questionIndex: questions
                                                             .indexOf(e),
@@ -348,7 +362,7 @@ class _ExamPageState extends State<ExamPage> {
   void calculateResult(BuildContext context) {
     correctAnswers = 0;
     wrongAnswers = 0;
-    for (var item in answers) {
+    for (var item in answers.values) {
       if (item == null) {
         continue;
       }
@@ -361,19 +375,19 @@ class _ExamPageState extends State<ExamPage> {
     setState(() {
       isAnswer = !isAnswer;
     });
-    var result =
-        answers.where((element) => element == true).length / answers.length;
+    var result = answers.values.where((element) => element == true).length /
+        answers.length;
     Get.defaultDialog(
       content: Column(
         children: [
-          CText(
-            'ئەنجامەکەت: ' +
-                '${(result * 100).toInt()}'
-                    '/100',
-            color: widget.accentColor,
-            sizee: 14,
-            padding: const EdgeInsetsDirectional.only(),
-          ),
+          // CText(
+          //   'ئەنجامەکەت: ' +
+          //       '${(result * 100).toInt()}'
+          //           '/100',
+          //   color: widget.accentColor,
+          //   sizee: 14,
+          //   padding: const EdgeInsetsDirectional.only(),
+          // ),
           // if (result < 70)
           //   CustomText(
           //     text:'',

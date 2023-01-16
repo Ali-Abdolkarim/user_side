@@ -33,7 +33,7 @@ class QuizInfoCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    assert((timeRemaining != null && againText == null) ||
+    assert((timeRemaining != null) ||
         (timeRemaining == null && againText != null));
 
     var size = MediaQuery.of(context).size;
@@ -219,7 +219,7 @@ class QuestionCard extends StatefulWidget {
   final EdgeInsetsGeometry? padding;
   final Color accentColor;
   final bool showAnswer;
-  final ActionRVIIS? updateAnswerAction;
+  final ActionRVII? updateAnswerAction;
   final int questionIndex;
   final TextDirection? textDirection;
   final ActionP? resultAction;
@@ -260,18 +260,15 @@ class _QuestionCardState extends State<QuestionCard> {
                 });
                 //changed this one -------------------------------------------------------->
                 widget.updateAnswerAction!(
-                    widget.questionIndex,
-                    widget.question.correctAnswer!
-                        .contains(widget.question.answerItemModel!.answers
-                            .indexOf(selectedItem!))
-                        .toString());
-                log(selectedItem.toString());
+                    widget.question.answerItemModel!.answers.indexOf(e));
               },
-        isSelected: selectedItem == e,
+        isSelected: widget.question.selectedAnswers![
+            widget.question.answerItemModel!.answers.indexOf(e)],
         isCorrect: widget.showAnswer &&
-            widget.question.correctAnswer!.contains(widget
-                .question.answerItemModel!.answers
-                .indexOf(selectedItem!)),
+            widget.question.correctAnswer![
+                    widget.question.answerItemModel!.answers.indexOf(e)] ==
+                widget.question.selectedAnswers![
+                    widget.question.answerItemModel!.answers.indexOf(e)],
         // &&
         // selectedItem!.answer == e.answer,
         accentColor: widget.accentColor,
@@ -286,15 +283,16 @@ class _QuestionCardState extends State<QuestionCard> {
         padding: const EdgeInsetsDirectional.fromSTEB(0, 0, 0, 8),
         decoration: BoxDecoration(
           border: Border.all(
-              color: widget.showAnswer
-                  ? selectedItem == null
-                      ? Colors.grey
-                      : widget.question.correctAnswer!.contains(widget
-                              .question.answerItemModel!.answers
-                              .indexOf(selectedItem!))
-                          ? Colors.green
-                          : Colors.red
-                  : widget.accentColor),
+              color:
+                  // widget.showAnswer
+                  // ? selectedItem == null
+                  //     ? Colors.grey
+                  //     : widget.question
+                  //             .correctAnswer![widget.question.answerItemModel!.answers.indexOf(e)]
+                  //         ? Colors.green
+                  //         : Colors.red
+                  // :
+                  widget.accentColor),
           borderRadius: BorderRadiusDirectional.circular(10),
         ),
         width: size.width,
@@ -306,15 +304,16 @@ class _QuestionCardState extends State<QuestionCard> {
               width: size.width,
               alignment: AlignmentDirectional.centerStart,
               decoration: BoxDecoration(
-                color: widget.showAnswer
-                    ? selectedItem == null
-                        ? Colors.grey
-                        : widget.question.correctAnswer!.contains(widget
-                                .question.answerItemModel!.answers
-                                .indexOf(selectedItem!))
-                            ? Colors.green
-                            : Colors.red
-                    : widget.accentColor,
+                color:
+                    // widget.showAnswer
+                    //     ? selectedItem == null
+                    //         ? Colors.grey
+                    //         : widget.question
+                    //                 .correctAnswer![answers.indexOf(selectedItem)]
+                    //             ? Colors.green
+                    //             : Colors.red
+                    //     :
+                    widget.accentColor,
                 borderRadius: const BorderRadiusDirectional.vertical(
                   top: Radius.circular(10),
                 ),
@@ -408,20 +407,33 @@ class AnswerItemCard extends StatelessWidget {
         padding: const EdgeInsetsDirectional.fromSTEB(16, 8, 12, 8),
         decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: isCorrect ? Colors.green : Colors.grey),
-            color: isSelected ? Colors.white : Colors.grey[300]),
+            border: Border.all(
+                color: showAnswer
+                    ? isCorrect
+                        ? Colors.green
+                        : Colors.red
+                    : isSelected
+                        ? accentColor!
+                        : Colors.grey),
+            color: showAnswer
+                ? isCorrect
+                    ? Colors.white
+                    : Colors.grey[300]
+                : isSelected
+                    ? Colors.white
+                    : Colors.grey[300]),
         alignment: Alignment.center,
         child: TwoElementFirstExpanded(
           // answerType == 0
           //     ?
           CText(
             answer,
-            color: showAnswer & isSelected
+            color: showAnswer
                 ? isCorrect
                     ? Colors.green
                     : Colors.red
-                : isCorrect
-                    ? Colors.green
+                : isSelected
+                    ? accentColor
                     : Colors.grey[700],
             sizee: 14,
             align: TextAlign.start,
@@ -429,7 +441,7 @@ class AnswerItemCard extends StatelessWidget {
           // : Html(data: answer),
           ReadSVG.read(
             isSelected ? 'tick_in_circle' : 'unselected_answer',
-            color: showAnswer & isSelected
+            color: showAnswer
                 ? isCorrect
                     ? Colors.green
                     : Colors.red

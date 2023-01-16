@@ -5,7 +5,7 @@ part 'exam_question.g.dart';
 @JsonSerializable()
 class ExamQuestion {
   @JsonKey(name: 'correct_answer')
-  List<int>? correctAnswer;
+  List<bool>? correctAnswer;
   @JsonKey(name: 'answers_link')
   String? answersLink;
   @JsonKey(name: 'extra_point')
@@ -14,6 +14,7 @@ class ExamQuestion {
   String? examId;
   String? question;
   AnswerItemModel? answerItemModel;
+  List<bool>? selectedAnswers = [];
 
   ExamQuestion({
     this.question,
@@ -22,6 +23,7 @@ class ExamQuestion {
     this.examId,
     this.extraPoint,
     this.answersLink,
+    this.selectedAnswers,
   });
 
   factory ExamQuestion.fromJson(Map<String, dynamic> json) =>
