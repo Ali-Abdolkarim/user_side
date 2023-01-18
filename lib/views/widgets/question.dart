@@ -19,14 +19,18 @@ class QuizInfoCard extends StatelessWidget {
   final int totalQuestions;
   final int questionsAnswered;
   final String? title;
+  final int initialTime;
+  final ActionP? timeFinished;
   const QuizInfoCard({
     Key? key,
     this.items,
     required this.accentColor,
     required this.icon,
     required this.timeRemaining,
+    required this.initialTime,
     this.againText,
     this.title,
+    this.timeFinished,
     required this.questionsAnswered,
     required this.totalQuestions,
   }) : super(key: key);
@@ -80,6 +84,7 @@ class QuizInfoCard extends StatelessWidget {
                       CircularCountDownTimer(
                         duration: timeRemaining,
                         controller: CountDownController(),
+                        initialDuration: initialTime,
                         width: 60,
                         height: 60,
                         ringColor: Colors.grey[300]!,
@@ -103,7 +108,9 @@ class QuizInfoCard extends StatelessWidget {
                           debugPrint('Countdown Started');
                         },
                         onComplete: () {
-                          debugPrint('Countdown Ended');
+                          if (timeFinished != null) {
+                            timeFinished!();
+                          }
                         },
                         onChange: (String timeStamp) {
                           debugPrint('Countdown Changed $timeStamp');

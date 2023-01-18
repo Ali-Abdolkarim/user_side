@@ -84,26 +84,27 @@ class _HomePageState extends State<HomePage> {
       }
       var username = await storage.read(Texts.USERNAME);
       //------------------------------------------>uncomment later below
-      // var examTakenResponse = await db
-      //     .collection(Texts.EXAMS_TAKEN)
-      //     .where(Texts.USERNAME, isEqualTo: username)
-      //     .where(Texts.EXAM_ID, isEqualTo: currentExamResponse.docs[0].id)
-      //     .get();
-      // if (examTakenResponse.docs.isNotEmpty) {
-      //   Get.defaultDialog(
-      //       radius: 6,
-      //       cancel: SimpleButton(
-      //         'Cancel',
-      //         action: () => Get.back(),
-      //         height: 35,
-      //         borderRadius: 6,
-      //       ),
-      //       content: const CText('You have participated in that test before'));
-      //   setState(() {
-      //     _loading = false;
-      //   });
-      //   return;
-      // }
+      var examTakenResponse = await db
+          .collection(Texts.EXAMS_TAKEN)
+          .where(Texts.USERNAME, isEqualTo: username)
+          .where(Texts.SUBMITTED, isEqualTo: true)
+          .where(Texts.EXAM_ID, isEqualTo: currentExamResponse.docs[0].id)
+          .get();
+      if (examTakenResponse.docs.isNotEmpty) {
+        Get.defaultDialog(
+            radius: 6,
+            cancel: SimpleButton(
+              'Cancel',
+              action: () => Get.back(),
+              height: 35,
+              borderRadius: 6,
+            ),
+            content: const CText('You have participated in that test before'));
+        setState(() {
+          _loading = false;
+        });
+        return;
+      }
       Get.defaultDialog(
           radius: 6,
           confirm: SimpleButton(
@@ -113,12 +114,15 @@ class _HomePageState extends State<HomePage> {
                 Texts.EXAM_ID: currentExamResponse.docs[0].id,
                 Texts.USERNAME: username
               };
-              await db.collection(Texts.EXAMS_TAKEN).add(temp);
+              var examTakenResponse =
+                  await db.collection(Texts.EXAMS_TAKEN).add(temp);
+              Get.back();
               Navigator.of(context).push(MaterialPageRoute(
                 builder: (context) => ExamPage(
                     accentColor: Colors.orange,
                     subject: exam.title,
-                    examId: currentExamResponse.docs[0].id),
+                    examId: currentExamResponse.docs[0].id,
+                    examTakenId: examTakenResponse.id),
               ));
             },
             height: 35,

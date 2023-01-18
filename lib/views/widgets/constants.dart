@@ -14,4 +14,6 @@ class Texts {
   static const String EXAM_ID = 'exam_id';
   static const String QUESTION_ID = 'question_id';
   static const String USERNAME = 'username';
+  static const String SUBMITTED = 'submitted';
+  static const String RESULT = 'result';
 }

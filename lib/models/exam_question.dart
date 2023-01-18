@@ -16,6 +16,9 @@ class ExamQuestion {
   AnswerItemModel? answerItemModel;
   List<bool>? selectedAnswers = [];
 
+//change the to json to   'answerItemModel': _$AnswerItemModelToJson(instance.answerItemModel!),
+//as it throws an exception
+
   ExamQuestion({
     this.question,
     this.answerItemModel,

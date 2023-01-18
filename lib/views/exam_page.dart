@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:developer';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -14,6 +13,7 @@ import 'package:user_side/views/widgets/question.dart';
 class ExamPage extends StatefulWidget {
   final Color accentColor;
   final String subject;
+  final String? examTakenId;
 
   final String examId;
 
@@ -22,6 +22,7 @@ class ExamPage extends StatefulWidget {
     required this.accentColor,
     required this.subject,
     required this.examId,
+    this.examTakenId,
   }) : super(key: key);
 
   @override
@@ -110,12 +111,13 @@ class _ExamPageState extends State<ExamPage> {
           //   }
           //   if (_timeRemaining == 0) {
           //     calculateResult(context);
-
           //     timer.cancel();
           //   }
           // });
         }
-        setState(() {});
+        if (mounted) {
+          setState(() {});
+        }
       }
     });
 
@@ -215,48 +217,53 @@ class _ExamPageState extends State<ExamPage> {
                                       34, 8, 34, 0),
                                   child: Column(
                                     children: [
-                                      isAnswer
-                                          ? QuizInfoCard(
-                                              accentColor: widget.accentColor,
-                                              icon: 'history',
-                                              againText: 'دووبارەکردنەوە',
-                                              timeRemaining: _timeRemaining,
-                                              questionsAnswered: answers.values
-                                                  .where((element) =>
-                                                      element != null)
-                                                  .length,
-                                              title: ' :ئەنجامی تاقیکردنەوە',
-                                              items: [
-                                                QuizInfoItem(
-                                                  'وەڵامی ڕاست  :',
-                                                  '    $correctAnswers',
-                                                  showLine: false,
-                                                ),
-                                                QuizInfoItem(
-                                                  'وەڵامی هەڵە   :',
-                                                  '    $wrongAnswers',
-                                                  showLine: false,
-                                                ),
-                                              ],
-                                              totalQuestions: questions.length)
-                                          : QuizInfoCard(
-                                              accentColor: widget.accentColor,
-                                              icon: 'clock',
-                                              questionsAnswered: answers.values
-                                                  .where((element) =>
-                                                      element != null)
-                                                  .length,
-                                              totalQuestions: questions.length,
-                                              timeRemaining: _timeRemaining,
-                                              items: [
-                                                // QuizInfoItem(
-                                                //     'ئاستێک', widget.level),
-                                                // QuizInfoItem(
-                                                //     'یەکە', widget.section),
-                                                QuizInfoItem(
-                                                    'بابەت', widget.subject),
-                                              ],
-                                            ),
+                                      // isAnswer
+                                      //     ? QuizInfoCard(
+                                      //         accentColor: widget.accentColor,
+                                      //         icon: 'history',
+                                      //         againText: 'دووبارەکردنەوە',
+                                      //         timeRemaining: _timeRemaining,
+                                      //         questionsAnswered: questions
+                                      //             .where((element) => element
+                                      //                 .selectedAnswers!
+                                      //                 .contains(true))
+                                      //             .length,
+                                      //         title: ' :ئەنجامی تاقیکردنەوە',
+                                      //         items: [
+                                      //           QuizInfoItem(
+                                      //             'وەڵامی ڕاست  :',
+                                      //             '    $correctAnswers',
+                                      //             showLine: false,
+                                      //           ),
+                                      //           QuizInfoItem(
+                                      //             'وەڵامی هەڵە   :',
+                                      //             '    $wrongAnswers',
+                                      //             showLine: false,
+                                      //           ),
+                                      //         ],
+                                      //         totalQuestions: questions.length)
+                                      //     :
+                                      QuizInfoCard(
+                                        accentColor: widget.accentColor,
+                                        icon: 'clock',
+                                        timeFinished: () =>
+                                            calculateResult(context),
+                                        questionsAnswered: questions
+                                            .where((element) => element
+                                                .selectedAnswers!
+                                                .contains(true))
+                                            .length,
+                                        totalQuestions: questions.length,
+                                        timeRemaining: _timeRemaining,
+                                        initialTime: _examInfo.duration,
+                                        items: [
+                                          // QuizInfoItem(
+                                          //     'ئاستێک', widget.level),
+                                          // QuizInfoItem(
+                                          //     'یەکە', widget.section),
+                                          QuizInfoItem('بابەت', widget.subject),
+                                        ],
+                                      ),
                                       Expanded(
                                         child: Container(
                                           margin: const EdgeInsetsDirectional
@@ -273,6 +280,7 @@ class _ExamPageState extends State<ExamPage> {
                                                         accentColor:
                                                             widget.accentColor,
                                                         showAnswer: isAnswer,
+
                                                         // textDirection:
                                                         //     direction,
                                                         padding:
@@ -282,15 +290,13 @@ class _ExamPageState extends State<ExamPage> {
                                                         updateAnswerAction:
                                                             (index) {
                                                           // updateAnswer(p0, p1);
-                                                          log(e.selectedAnswers
-                                                              .toString());
+
                                                           e.selectedAnswers![
                                                                   index!] =
                                                               !e.selectedAnswers![
                                                                   index];
                                                           setState(() {});
-                                                          log(e.selectedAnswers
-                                                              .toString());
+                                                          updateQuestionsInServer();
                                                         },
                                                         questionIndex: questions
                                                             .indexOf(e),
@@ -359,19 +365,52 @@ class _ExamPageState extends State<ExamPage> {
     );
   }
 
+  void updateQuestionsInServer() {
+    var temp = [];
+    for (var element in questions) {
+      temp.add(element.toJson());
+    }
+    db
+        .collection(Texts.EXAMS_TAKEN)
+        .doc(widget.examTakenId)
+        .update({Texts.QUESTIONS: temp});
+  }
+
   void calculateResult(BuildContext context) {
-    correctAnswers = 0;
-    wrongAnswers = 0;
-    for (var item in answers.values) {
-      if (item == null) {
-        continue;
+    var questionAllCorrectFlag = true;
+
+    for (var element in questions) {
+      correctAnswers = 0;
+      wrongAnswers = 0;
+      questionAllCorrectFlag = true;
+      for (var i = 0; i < element.correctAnswer!.length; i++) {
+        if (element.correctAnswer![i] != element.selectedAnswers![i]) {
+          questionAllCorrectFlag = false;
+          wrongAnswers++;
+        } else {
+          correctAnswers++;
+        }
       }
-      if (item == 'true') {
-        correctAnswers++;
-      } else {
-        wrongAnswers++;
+      if (questionAllCorrectFlag) {
+        correctAnswers += int.parse(element.extraPoint ?? '0');
       }
     }
+
+    db
+        .collection(Texts.EXAMS_TAKEN)
+        .doc(widget.examTakenId)
+        .update({Texts.SUBMITTED: true, Texts.RESULT: correctAnswers});
+
+    // for (var item in answers.values) {
+    //   if (item == null) {
+    //     continue;
+    //   }
+    //   if (item == 'true') {
+    //     correctAnswers++;
+    //   } else {
+    //     wrongAnswers++;
+    //   }
+    // }
     setState(() {
       isAnswer = !isAnswer;
     });

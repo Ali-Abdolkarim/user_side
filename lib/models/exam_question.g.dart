@@ -30,7 +30,7 @@ Map<String, dynamic> _$ExamQuestionToJson(ExamQuestion instance) =>
       'extra_point': instance.extraPoint,
       'exam_id': instance.examId,
       'question': instance.question,
-      'answerItemModel': instance.answerItemModel,
+      'answerItemModel': _$AnswerItemModelToJson(instance.answerItemModel!),
       'selectedAnswers': instance.selectedAnswers,
     };
 
