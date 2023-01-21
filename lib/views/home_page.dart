@@ -87,10 +87,11 @@ class _HomePageState extends State<HomePage> {
       var examTakenResponse = await db
           .collection(Texts.EXAMS_TAKEN)
           .where(Texts.USERNAME, isEqualTo: username)
-          .where(Texts.SUBMITTED, isEqualTo: true)
           .where(Texts.EXAM_ID, isEqualTo: currentExamResponse.docs[0].id)
           .get();
-      if (examTakenResponse.docs.isNotEmpty) {
+      if (examTakenResponse.docs.isNotEmpty &&
+          examTakenResponse.docs[0].data()[Texts.SUBMITTED] != null &&
+          examTakenResponse.docs[0].data()[Texts.SUBMITTED]) {
         Get.defaultDialog(
             radius: 6,
             cancel: SimpleButton(
@@ -110,20 +111,31 @@ class _HomePageState extends State<HomePage> {
           confirm: SimpleButton(
             'Start',
             action: () async {
-              var temp = {
-                Texts.EXAM_ID: currentExamResponse.docs[0].id,
-                Texts.USERNAME: username
-              };
-              var examTakenResponse =
-                  await db.collection(Texts.EXAMS_TAKEN).add(temp);
-              Get.back();
-              Navigator.of(context).push(MaterialPageRoute(
-                builder: (context) => ExamPage(
-                    accentColor: Colors.orange,
-                    subject: exam.title,
-                    examId: currentExamResponse.docs[0].id,
-                    examTakenId: examTakenResponse.id),
-              ));
+              if (examTakenResponse.docs.isNotEmpty) {
+                Get.back();
+                Navigator.of(context).push(MaterialPageRoute(
+                  builder: (context) => ExamPage(
+                      accentColor: const Color.fromARGB(255, 213, 44, 35),
+                      subject: exam.title,
+                      examId: currentExamResponse.docs[0].id,
+                      examTakenId: examTakenResponse.docs[0].id),
+                ));
+              } else {
+                var temp = {
+                  Texts.EXAM_ID: currentExamResponse.docs[0].id,
+                  Texts.USERNAME: username
+                };
+                var examTakenResponse =
+                    await db.collection(Texts.EXAMS_TAKEN).add(temp);
+                Get.back();
+                Navigator.of(context).push(MaterialPageRoute(
+                  builder: (context) => ExamPage(
+                      accentColor: const Color.fromARGB(255, 213, 44, 35),
+                      subject: exam.title,
+                      examId: currentExamResponse.docs[0].id,
+                      examTakenId: examTakenResponse.id),
+                ));
+              }
             },
             height: 35,
             borderRadius: 6,

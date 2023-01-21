@@ -1,7 +1,4 @@
-import 'dart:developer';
-
 import 'package:circular_countdown_timer/circular_countdown_timer.dart';
-import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 import 'package:percent_indicator/linear_percent_indicator.dart';
 import 'package:user_side/models/exam_question.dart';
@@ -159,7 +156,8 @@ class QuizInfoCard extends StatelessWidget {
                         '${((questionsAnswered / totalQuestions) * 100).toStringAsFixed(0)}%',
                         sizee: 14,
                       ),
-                      progressColor: Colors.orange, // CustomColors.orangeColor,
+                      progressColor: const Color.fromARGB(
+                          255, 213, 44, 35), // CustomColors.orangeColor,
                     ),
                   ),
                   CText(

@@ -94,6 +94,19 @@ class _ExamPageState extends State<ExamPage> {
             questions[questions.length - 1].selectedAnswers!.add(false);
           }
         }
+        var examTakenResponse = await db
+            .collection(Texts.EXAMS_TAKEN)
+            .doc(widget.examTakenId)
+            .get();
+        if (examTakenResponse.data() != null &&
+            examTakenResponse.data()!.isNotEmpty &&
+            examTakenResponse.data()![Texts.QUESTIONS] != null) {
+          questions.clear();
+          var questionsJson = examTakenResponse.data()![Texts.QUESTIONS];
+          questionsJson.forEach((element) {
+            questions.add(ExamQuestion.fromJson(element));
+          });
+        }
 
         if (questions.isNotEmpty) {
           // answers = List.generate(questions.length, (_) => null);
@@ -370,10 +383,10 @@ class _ExamPageState extends State<ExamPage> {
     for (var element in questions) {
       temp.add(element.toJson());
     }
-    db
-        .collection(Texts.EXAMS_TAKEN)
-        .doc(widget.examTakenId)
-        .update({Texts.QUESTIONS: temp});
+    db.collection(Texts.EXAMS_TAKEN).doc(widget.examTakenId).update({
+      Texts.QUESTIONS: temp,
+      Texts.TITLE: _examInfo.title,
+    });
   }
 
   void calculateResult(BuildContext context) {
@@ -396,10 +409,11 @@ class _ExamPageState extends State<ExamPage> {
       }
     }
 
-    db
-        .collection(Texts.EXAMS_TAKEN)
-        .doc(widget.examTakenId)
-        .update({Texts.SUBMITTED: true, Texts.RESULT: correctAnswers});
+    db.collection(Texts.EXAMS_TAKEN).doc(widget.examTakenId).update({
+      Texts.SUBMITTED: true,
+      Texts.RESULT: correctAnswers,
+      Texts.TITLE: _examInfo.title,
+    });
 
     // for (var item in answers.values) {
     //   if (item == null) {
