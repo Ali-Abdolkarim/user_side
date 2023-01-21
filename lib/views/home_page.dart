@@ -123,7 +123,9 @@ class _HomePageState extends State<HomePage> {
               } else {
                 var temp = {
                   Texts.EXAM_ID: currentExamResponse.docs[0].id,
-                  Texts.USERNAME: username
+                  Texts.USERNAME: username,
+                  Texts.TITLE: exam.title,
+                  Texts.RESULT: 0,
                 };
                 var examTakenResponse =
                     await db.collection(Texts.EXAMS_TAKEN).add(temp);
