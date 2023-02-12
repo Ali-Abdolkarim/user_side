@@ -100,7 +100,8 @@ class _HomePageState extends State<HomePage> {
               height: 35,
               borderRadius: 6,
             ),
-            content: const CText('You have participated in that test before'));
+            content: const CText(
+                'You have participated in that test before and submitted your answer.'));
         setState(() {
           _loading = false;
         });
@@ -157,35 +158,72 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    var size = MediaQuery.of(context).size;
     return Scaffold(
       backgroundColor: Colors.white,
       resizeToAvoidBottomInset: false,
-      body: Center(
-        child: _loading
-            ? const CircularProgressIndicator()
-            : Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Container(
-                    margin: const EdgeInsetsDirectional.fromSTEB(8, 0, 8, 16),
-                    child: const CText('Enter Test Code'),
-                  ),
-                  Container(
-                    margin: const EdgeInsetsDirectional.fromSTEB(8, 0, 8, 8),
-                    child: Form(
-                      key: _formKey,
-                      child: SimpleFormInput(controller: _codeController),
+      body: SafeArea(
+        child: Center(
+          child: _loading
+              ? const CircularProgressIndicator()
+              : Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    InkWell(
+                      onTap: () {},
+                      child: Container(
+                        padding: const EdgeInsetsDirectional.fromSTEB(
+                            20, 20, 20, 20),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            const CText('Logout'),
+                            Container(
+                                margin: const EdgeInsetsDirectional.fromSTEB(
+                                    20, 0, 0, 0),
+                                child: const Icon(Icons.logout)),
+                          ],
+                        ),
+                      ),
                     ),
-                  ),
-                  Container(
-                    margin: const EdgeInsetsDirectional.fromSTEB(8, 8, 8, 0),
-                    child: SimpleButton(
-                      'Enter',
-                      action: enterExam,
-                    ),
-                  ),
-                ],
-              ),
+                    Expanded(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Image.asset(
+                            'assets/input.png',
+                            height: size.height * .35,
+                          ),
+                          Container(
+                            margin: const EdgeInsetsDirectional.fromSTEB(
+                                8, 50, 8, 16),
+                            child: const CText('Enter Test Code'),
+                          ),
+                          Container(
+                            margin: const EdgeInsetsDirectional.fromSTEB(
+                                8, 0, 8, 8),
+                            child: Form(
+                              key: _formKey,
+                              child:
+                                  SimpleFormInput(controller: _codeController),
+                            ),
+                          ),
+                          Container(
+                            margin: const EdgeInsetsDirectional.fromSTEB(
+                                8, 8, 8, 0),
+                            child: SimpleButton(
+                              'Enter',
+                              action: enterExam,
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  ],
+                ),
+        ),
       ),
     );
   }
