@@ -34,7 +34,7 @@ class _ExamPageState extends State<ExamPage> {
   var _timeRemaining = 20;
   late Timer timer;
   var questionsAnswered = 0;
-  var correctAnswers = 0;
+  var result = 0;
   var wrongAnswers = 0;
   var answers = {};
   var _loading = true;
@@ -208,11 +208,11 @@ class _ExamPageState extends State<ExamPage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Padding(
-                          padding: const EdgeInsetsDirectional.fromSTEB(
-                              34, 28, 8, 8),
+                          padding:
+                              const EdgeInsetsDirectional.fromSTEB(34, 6, 8, 0),
                           child: BackButton(
                             onPressed: () {
-                              questions.isEmpty
+                              questions.isEmpty || isAnswer
                                   ? Navigator.pop(context)
                                   : showBackDialog();
                             },
@@ -221,13 +221,13 @@ class _ExamPageState extends State<ExamPage> {
                         questions.isEmpty
                             ? const Center(
                                 child: CText(
-                                  'هیچ پرسیارێک بەردەست نیە.',
+                                  'no questions available',
                                 ),
                               )
                             : Expanded(
                                 child: Container(
                                   margin: const EdgeInsetsDirectional.fromSTEB(
-                                      34, 8, 34, 0),
+                                      34, 0, 34, 0),
                                   child: Column(
                                     children: [
                                       // isAnswer
@@ -245,7 +245,7 @@ class _ExamPageState extends State<ExamPage> {
                                       //         items: [
                                       //           QuizInfoItem(
                                       //             'وەڵامی ڕاست  :',
-                                      //             '    $correctAnswers',
+                                      //             '    $result',
                                       //             showLine: false,
                                       //           ),
                                       //           QuizInfoItem(
@@ -269,18 +269,19 @@ class _ExamPageState extends State<ExamPage> {
                                         totalQuestions: questions.length,
                                         timeRemaining: _timeRemaining,
                                         initialTime: _examInfo.duration,
+                                        isFinished: isAnswer,
                                         items: [
                                           // QuizInfoItem(
                                           //     'ئاستێک', widget.level),
                                           // QuizInfoItem(
                                           //     'یەکە', widget.section),
-                                          QuizInfoItem('بابەت', widget.subject),
+                                          QuizInfoItem('Title', widget.subject),
                                         ],
                                       ),
                                       Expanded(
                                         child: Container(
                                           margin: const EdgeInsetsDirectional
-                                              .fromSTEB(0, 4, 0, 0),
+                                              .fromSTEB(0, 0, 0, 0),
                                           child: SingleChildScrollView(
                                             child: Column(
                                               crossAxisAlignment:
@@ -355,19 +356,18 @@ class _ExamPageState extends State<ExamPage> {
                                           ),
                                         ),
                                       ),
-                                      SimpleButton(
-                                        isAnswer
-                                            ? 'دووبارەکردنەوە'
-                                            : 'تەواوکردن',
-                                        action: () {
-                                          if (isAnswer) {
-                                            Navigator.of(context).pop();
-                                            return;
-                                          }
-                                          calculateResult(context);
-                                        },
-                                        backgroundColor: widget.accentColor,
-                                      )
+                                      if (!isAnswer)
+                                        SimpleButton(
+                                          'Submit',
+                                          action: () {
+                                            if (isAnswer) {
+                                              Navigator.of(context).pop();
+                                              return;
+                                            }
+                                            calculateResult(context);
+                                          },
+                                          backgroundColor: widget.accentColor,
+                                        )
                                     ],
                                   ),
                                 ),
@@ -390,28 +390,27 @@ class _ExamPageState extends State<ExamPage> {
   }
 
   void calculateResult(BuildContext context) {
+    updateQuestionsInServer();
     var questionAllCorrectFlag = true;
 
     for (var element in questions) {
-      correctAnswers = 0;
-      wrongAnswers = 0;
       questionAllCorrectFlag = true;
       for (var i = 0; i < element.correctAnswer!.length; i++) {
         if (element.correctAnswer![i] != element.selectedAnswers![i]) {
           questionAllCorrectFlag = false;
-          wrongAnswers++;
+          result--;
         } else {
-          correctAnswers++;
+          result++;
         }
       }
       if (questionAllCorrectFlag) {
-        correctAnswers += int.parse(element.extraPoint ?? '0');
+        result += int.parse(element.extraPoint ?? '0');
       }
     }
 
     db.collection(Texts.EXAMS_TAKEN).doc(widget.examTakenId).update({
       Texts.SUBMITTED: true,
-      Texts.RESULT: correctAnswers,
+      Texts.RESULT: result,
       Texts.TITLE: _examInfo.title,
     });
 
@@ -420,7 +419,7 @@ class _ExamPageState extends State<ExamPage> {
     //     continue;
     //   }
     //   if (item == 'true') {
-    //     correctAnswers++;
+    //     result++;
     //   } else {
     //     wrongAnswers++;
     //   }
@@ -428,55 +427,21 @@ class _ExamPageState extends State<ExamPage> {
     setState(() {
       isAnswer = !isAnswer;
     });
-    var result = answers.values.where((element) => element == true).length /
-        answers.length;
     Get.defaultDialog(
-      content: Column(
-        children: [
-          // CText(
-          //   'ئەنجامەکەت: ' +
-          //       '${(result * 100).toInt()}'
-          //           '/100',
-          //   color: widget.accentColor,
-          //   sizee: 14,
-          //   padding: const EdgeInsetsDirectional.only(),
-          // ),
-          // if (result < 70)
-          //   CustomText(
-          //     text:'',
-          //         // 'ببورە ناتوانیت بچیتە وانەی دواتر چوونکە نمرەکەت کەمترە لە  70/100.',
-          //     color: widget.accentColor,
-          //     fontSize: 14,
-          //     padding: const EdgeInsetsDirectional.only(),
-          //   ),
-          // if (result < 70)
-          CText(
-            result > 0.9
-                ? 'نایاب'
-                : result > 0.8
-                    ? 'زۆر باشە'
-                    : result > 0.7
-                        ? 'باشە'
-                        : result > 0.6
-                            ? 'ناوەند'
-                            : result > 0.5
-                                ? 'پەسەند'
-                                : 'لاواز',
-            color: Colors.grey,
-            sizee: 14,
-            padding: const EdgeInsetsDirectional.only(top: 12),
-          ),
-          Container(
-            margin: const EdgeInsetsDirectional.only(top: 12),
-            child: SimpleButton(
-              result < 70 ? 'دووبارەکردنەوە' : 'دەرچوون',
-              action: () {
-                Navigator.of(context).pop();
-              },
-              backgroundColor: widget.accentColor,
-            ),
-          )
-        ],
+      title: 'Test Submitted',
+      content: CText('Your Result : $result'),
+      confirm: SimpleButton(
+        'Go Back to Home Page',
+        action: () {
+          Get.back();
+          Get.back();
+        },
+      ),
+      cancel: SimpleButton(
+        'See Questions',
+        action: () {
+          Get.back();
+        },
       ),
     );
   }
