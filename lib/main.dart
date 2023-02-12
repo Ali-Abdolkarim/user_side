@@ -22,6 +22,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return GetMaterialApp(
       title: 'Flutter Demo',
+      debugShowCheckedModeBanner: false,
       home: Builder(builder: (context) {
         // if (snapshot.connectionState == ConnectionState.done &&
         //     snapshot.data != null) {
