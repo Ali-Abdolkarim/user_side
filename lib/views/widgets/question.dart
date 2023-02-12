@@ -18,6 +18,7 @@ class QuizInfoCard extends StatelessWidget {
   final String? title;
   final int initialTime;
   final ActionP? timeFinished;
+  final bool isFinished;
   const QuizInfoCard({
     Key? key,
     this.items,
@@ -29,6 +30,7 @@ class QuizInfoCard extends StatelessWidget {
     this.title,
     this.timeFinished,
     required this.questionsAnswered,
+    required this.isFinished,
     required this.totalQuestions,
   }) : super(key: key);
 
@@ -61,69 +63,70 @@ class QuizInfoCard extends StatelessWidget {
                           ...items!,
                         ]),
                   ),
-                Container(
-                  constraints: BoxConstraints(minWidth: size.width * .2),
-                  padding: const EdgeInsetsDirectional.fromSTEB(6, 18, 6, 18),
-                  margin: const EdgeInsetsDirectional.only(start: 12),
-                  decoration: BoxDecoration(
-                      color: accentColor,
-                      borderRadius: BorderRadius.circular(6)),
-                  child: Column(
-                    children: [
-                      // ReadSVG.read(icon, color: Colors.deepOrange, size: 30),
-                      // CText(
-                      //   againText ??
-                      //       '${timeRemaining! ~/ 3600}:${(timeRemaining! ~/ 60) % 60}:${timeRemaining! % 60}',
-                      //   padding: const EdgeInsets.only(top: 4),
-                      //   sizee: 14,
-                      //   color: Colors.white,
-                      // )
-                      CircularCountDownTimer(
-                        duration: timeRemaining,
-                        controller: CountDownController(),
-                        initialDuration: initialTime,
-                        width: 60,
-                        height: 60,
-                        ringColor: Colors.grey[300]!,
-                        ringGradient: null,
-                        fillColor: Colors.purpleAccent[100]!,
-                        fillGradient: null,
-                        backgroundColor: Colors.purple[500],
-                        backgroundGradient: null,
-                        strokeWidth: 8.0,
-                        strokeCap: StrokeCap.round,
-                        textStyle: TextStyle(
-                            fontSize: 10.0,
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold),
-                        textFormat: CountdownTextFormat.HH_MM_SS,
-                        isReverse: true,
-                        isReverseAnimation: false,
-                        isTimerTextShown: true,
-                        autoStart: true,
-                        onStart: () {
-                          debugPrint('Countdown Started');
-                        },
-                        onComplete: () {
-                          if (timeFinished != null) {
-                            timeFinished!();
-                          }
-                        },
-                        onChange: (String timeStamp) {
-                          debugPrint('Countdown Changed $timeStamp');
-                        },
-                        timeFormatterFunction:
-                            (defaultFormatterFunction, duration) {
-                          DateTime time = DateTime.fromMillisecondsSinceEpoch(
-                              duration.inMilliseconds);
-                          // return '${time.hour}:${time.minute}:${time.second}';
-                          return Function.apply(
-                              defaultFormatterFunction, [duration]);
-                        },
-                      ),
-                    ],
-                  ),
-                )
+                if (!isFinished)
+                  Container(
+                    constraints: BoxConstraints(minWidth: size.width * .2),
+                    padding: const EdgeInsetsDirectional.fromSTEB(6, 18, 6, 18),
+                    margin: const EdgeInsetsDirectional.only(start: 12),
+                    decoration: BoxDecoration(
+                        color: accentColor,
+                        borderRadius: BorderRadius.circular(6)),
+                    child: Column(
+                      children: [
+                        // ReadSVG.read(icon, color: Colors.deepOrange, size: 30),
+                        // CText(
+                        //   againText ??
+                        //       '${timeRemaining! ~/ 3600}:${(timeRemaining! ~/ 60) % 60}:${timeRemaining! % 60}',
+                        //   padding: const EdgeInsets.only(top: 4),
+                        //   sizee: 14,
+                        //   color: Colors.white,
+                        // )
+                        CircularCountDownTimer(
+                          duration: timeRemaining,
+                          controller: CountDownController(),
+                          initialDuration: initialTime,
+                          width: 60,
+                          height: 60,
+                          ringColor: Colors.grey[300]!,
+                          ringGradient: null,
+                          fillColor: Colors.purpleAccent[100]!,
+                          fillGradient: null,
+                          backgroundColor: Colors.purple[500],
+                          backgroundGradient: null,
+                          strokeWidth: 8.0,
+                          strokeCap: StrokeCap.round,
+                          textStyle: const TextStyle(
+                              fontSize: 10.0,
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold),
+                          textFormat: CountdownTextFormat.HH_MM_SS,
+                          isReverse: true,
+                          isReverseAnimation: false,
+                          isTimerTextShown: true,
+                          autoStart: true,
+                          onStart: () {
+                            debugPrint('Countdown Started');
+                          },
+                          onComplete: () {
+                            if (timeFinished != null) {
+                              timeFinished!();
+                            }
+                          },
+                          onChange: (String timeStamp) {
+                            debugPrint('Countdown Changed $timeStamp');
+                          },
+                          timeFormatterFunction:
+                              (defaultFormatterFunction, duration) {
+                            DateTime time = DateTime.fromMillisecondsSinceEpoch(
+                                duration.inMilliseconds);
+                            // return '${time.hour}:${time.minute}:${time.second}';
+                            return Function.apply(
+                                defaultFormatterFunction, [duration]);
+                          },
+                        ),
+                      ],
+                    ),
+                  )
               ],
             ),
             Container(
@@ -155,6 +158,8 @@ class QuizInfoCard extends StatelessWidget {
                       center: CText(
                         '${((questionsAnswered / totalQuestions) * 100).toStringAsFixed(0)}%',
                         sizee: 14,
+                        color: Colors.white,
+                        weight: FontWeight.bold,
                       ),
                       progressColor: const Color.fromARGB(
                           255, 213, 44, 35), // CustomColors.orangeColor,
